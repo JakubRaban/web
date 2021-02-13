@@ -67,6 +67,10 @@
         "type": "float",
         "min": "0.000001",
         "max": "100000.0"
+      },
+      "units": {
+        "quantity": "distance",
+        "default": "m"
       }
     }
   ],

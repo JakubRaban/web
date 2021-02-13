@@ -10,7 +10,9 @@ import '@ant-design/compatible/assets/index.css';
 import Input from "antd/es/input/Input";
 import Tooltip from "antd/es/tooltip/index";
 import Select from "antd/es/select/index";
+import {Col} from "antd";
 
+import { units } from "../../../units";
 
 const FormItem = LegacyForm.Item;
 const InputGroup = Input.Group;
@@ -186,7 +188,31 @@ class FormGenerator extends React.Component {
 
         return (
             <div>
-                <Tooltip title={typeof item.description !== 'undefined' ? item.description : "Insert value"}>
+                {item.units ?
+                    (<InputGroup compact>
+                        <Tooltip title={typeof item.description !== 'undefined' ? item.description : "Insert value"}>
+                            {getFieldDecorator(inputIdPrefix + item.parameterName, {
+                                rules: [{
+                                    required: true, message: "Please, insert a value!"
+                                }, {
+                                    validator: this.validate
+                                }],
+                                initialValue: typeof item.defaultValue !== undefined ? item.defaultValue : 0.5
+                            })(<>
+                                    <Input style={{width: inputFieldWidth, textAlign: 'center'}}
+                                           parametername={item.parameterName}
+                                           placeholder={item.placeholder}
+                                           onChange={this.handleEntryInputChange}/>
+                                </>
+                            )}
+                        </Tooltip>
+                        <Select defaultValue={item.units.default}>
+                            {Object.keys(units[item.units.quantity]).map((xd, index) => (
+                                <Option value={xd} key={index}>{xd}</Option>
+                            ))}
+                        </Select>
+                    </InputGroup> ) :
+                    ( <Tooltip title={typeof item.description !== 'undefined' ? item.description : "Insert value"}>
                     {getFieldDecorator(inputIdPrefix + item.parameterName, {
                         rules: [{
                             required: true, message: "Please, insert a value!"
@@ -194,13 +220,14 @@ class FormGenerator extends React.Component {
                             validator: this.validate
                         }],
                         initialValue: typeof item.defaultValue !== undefined ? item.defaultValue : 0.5
-                    })(
-                        <Input style={{ width: inputFieldWidth, textAlign: 'center' }}
-                               parametername={item.parameterName}
-                               placeholder={item.placeholder}
-                               onChange={this.handleEntryInputChange} />
+                    })(<>
+                            <Input style={{width: inputFieldWidth, textAlign: 'center'}}
+                                   parametername={item.parameterName}
+                                   placeholder={item.placeholder}
+                                   onChange={this.handleEntryInputChange}/>
+                        </>
                     )}
-                </Tooltip>
+                </Tooltip>)}
             </div>
         );
     };
