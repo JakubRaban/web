@@ -236,38 +236,36 @@ class FormGenerator extends React.Component {
                         validator: this.validate
                     }],
                     initialValue: typeof item.defaultValue !== undefined ? item.defaultValue : 0.5
-                })(<>
-                        <Input style={{width: inputFieldWidth, textAlign: 'center'}}
-                               parametername={item.parameterName}
-                               placeholder={item.placeholder}
-                               onChange={this.handleEntryInputChange}/>
-                    </>
+                })(
+                    <Input style={{width: inputFieldWidth, textAlign: 'center'}}
+                           parametername={item.parameterName}
+                           placeholder={item.placeholder}
+                           onChange={this.handleEntryInputChange}/>
                 )}
             </Tooltip>
         );
 
-        // const onUnitChange = (newUnit) => {
-        //     const parameterName = item.parameterName;
-        //     const { formData, formDataUnits } = this.state;
-        //     const oldUnit = formDataUnits[parameterName];
-        //     const particle = formData.particle_no;
-        //     const conversionRate = convertBetweenUnits(
-        //         item.units.quantity,
-        //         { unit: oldUnit, particle },
-        //         { unit: newUnit, particle },
-        //     );
-        //     formDataUnits[parameterName] = newUnit;
-        //     // this.setState({ formData, formDataUnits })
-        //     this.props.form.setFieldsValue({ 'input-id-slab_thickness_mm': formData[parameterName] * conversionRate });
-        // }
+        const onUnitChange = (newUnit) => {
+            const parameterName = item.parameterName;
+            const { formData, formDataUnits } = this.state;
+            const oldUnit = formDataUnits[parameterName];
+            const particle = formData.particle_no;
+            const conversionRate = convertBetweenUnits(
+                item.units.quantity,
+                { unit: oldUnit, particle },
+                { unit: newUnit, particle },
+            );
+            formDataUnits[parameterName] = newUnit;
+            formData[parameterName] *= conversionRate;
+            this.props.form.setFieldsValue({ [inputIdPrefix + parameterName]: formData[parameterName] });
+        }
 
-        // onChange={onUnitChange}>
         return (
             <div>
                 {item.units ? (
                     <InputGroup compact>
                         {input}
-                        <Select value={this.state.formDataUnits[item.parameterName]} defaultValue={item.units.default}>
+                        <Select value={this.state.formDataUnits[item.parameterName]} defaultValue={item.units.default} onChange={onUnitChange}>
                             {Object.keys(units[item.units.quantity]).map((unit, index) => (
                                 <Option value={unit} key={index}>{unit}</Option>
                             ))}
@@ -323,13 +321,12 @@ class FormGenerator extends React.Component {
         event.preventDefault();
         this.props.form.validateFieldsAndScroll((err, values) => {
             if (!err) {
-                this.props.setFormData(this.state.formData);
+                this.props.setFormData(this.state.formData, this.state.formDataUnits);
             }
         });
     };
 
     handleEntryInputChange = (event) => {
-        console.log(this.state);
         let newFormData = this.state.formData;
         newFormData[event.target.getAttribute('parametername')] = parseFloat(event.target.value);
         this.setState({

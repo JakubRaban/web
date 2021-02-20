@@ -184,7 +184,9 @@ export default class FunctionsController extends Component {
         });
     };
 
-    setFormData = (data) => {
+    setFormData = (data, units) => {
+        console.log(data, units);
+
         this.setState({ formData: data },
             () => this.state.json.plot === true ? this.calculate() : this.calculateLastResult());
     };
