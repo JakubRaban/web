@@ -35,9 +35,6 @@ export const convertBetweenUnits = (quantity, oldSpec, newSpec) => {
     return MULTIPLICATION_IDENTITY;
 }
 
-//BEFORE: energy[KeV/u] = 5000, particle = Alpha
-//AFTER: particle = Beta
-
 const particleMasses = {
     '1001': 1,
     '2004': 4,

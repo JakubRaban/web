@@ -5,7 +5,8 @@ export const units = {
         J: 4e-7,
     },
     distance: {
-        m: 1,
+        mm: 1000,
         cm: 100,
+        m: 1,
     }
 };

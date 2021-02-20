@@ -15,6 +15,7 @@ import Script from 'react-load-script'
 import Col from "react-bootstrap/Col";
 import Row from "react-bootstrap/Row";
 import FormItem from "antd/es/form/FormItem";
+import {convertBetweenUnits} from "../../converter";
 
 export default class FunctionsController extends Component {
     state = {
@@ -184,9 +185,18 @@ export default class FunctionsController extends Component {
         });
     };
 
-    setFormData = (data, units) => {
-        console.log(data, units);
-
+    setFormData = (data, formUnits) => {
+        const { formItems } = this.state.json;
+        Object.entries(data).forEach(([key, value]) => {
+            if(formUnits[key]) {
+                const unitSettings = formItems.find((item) => item.parameterName === key).units;
+                const defaultUnit = unitSettings.default;
+                const submittedUnit = formUnits[key];
+                const conversionRatio = convertBetweenUnits(unitSettings.quantity, {unit: submittedUnit}, {unit: defaultUnit});
+                data[key] = value * conversionRatio;
+            }
+        });
+        console.log(data);
         this.setState({ formData: data },
             () => this.state.json.plot === true ? this.calculate() : this.calculateLastResult());
     };
