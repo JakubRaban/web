@@ -19,6 +19,10 @@
         "type": "float",
         "min": "0.0",
         "max": "10000000.0"
+      },
+      "units": {
+        "quantity": "energy",
+        "default": "keV"
       }
     },
     {

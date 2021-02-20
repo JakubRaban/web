@@ -13,6 +13,8 @@ import Select from "antd/es/select/index";
 import {Col} from "antd";
 
 import { units } from "../../../units";
+import { convertBetweenUnits } from "../../../converter";
+import Text from "antd/lib/typography/Text";
 
 const FormItem = LegacyForm.Item;
 const InputGroup = Input.Group;
@@ -38,6 +40,7 @@ class FormGenerator extends React.Component {
     state = {
         toRender: "",
         formData: {},
+        formDataUnits: {},
         formItemsCounters: new Set(),
         items: [],
         validateEntryModuleFlag: true
@@ -109,44 +112,81 @@ class FormGenerator extends React.Component {
             this.state.formData[startName] = parseFloat(startHolder);
             this.state.formData[endName] = parseFloat(endHolder);
             this.state.formData[pointNoName] = this.state.formData.intervalType === stepValue ? stepDefault : pointsDefault;
+            this.state.formDataUnits["entryModule"] = item.units?.default;
             this.state.formItemsCounters.add(item.parameterName)
+        }
+
+        const startValueInput = (
+            <Tooltip title={"Insert start value"}>
+                {getFieldDecorator(startName, {
+                    rules: [{
+                        required: true, message: "Field required!"
+                    }, {
+                        validator: this.validateEntryModule
+                    }],
+                    initialValue: startHolder
+                })(
+                    <Input style={{ width: inputFieldWidth, textAlign: 'center' }}
+                           parametername={startName}
+                           placeholder={startHolder}
+                           onChange={this.handleEntryInputChange} />
+                )}
+            </Tooltip>
+        );
+
+        const endValueInput = (
+            <Tooltip title={"Insert end value"}>
+                {getFieldDecorator(endName, {
+                    rules: [{
+                        required: true, message: "Field required!"
+                    }, {
+                        validator: this.validateEntryModule
+                    }],
+                    initialValue: endHolder
+                })(
+                    <Input style={{ width: inputFieldWidth, textAlign: 'center' }}
+                           parametername={endName}
+                           placeholder={endHolder}
+                           onChange={this.handleEntryInputChange} />
+                )}
+            </Tooltip>
+        )
+
+        const onUnitChange = (unit) => {
+            const { formDataUnits } = this.state;
+            formDataUnits.entryModule = unit;
+            this.setState({ formDataUnits });
         }
 
         return (
             <div>
                 <FormItem style={{ margin: 6 }} label={"Start " + label} labelCol={{ span: textLabelForInputSpan }} wrapperCol={{ span: inputFieldSpan}}>
-                    <Tooltip title={"Insert start value"}>
-                        {getFieldDecorator(startName, {
-                            rules: [{
-                                required: true, message: "Field required!"
-                            }, {
-                                validator: this.validateEntryModule
-                            }],
-                            initialValue: startHolder
-                        })(
-                            <Input style={{ width: inputFieldWidth, textAlign: 'center' }}
-                                   parametername={startName}
-                                   placeholder={startHolder}
-                                   onChange={this.handleEntryInputChange} />
-                        )}
-                    </Tooltip>
+                    {item.units ? (
+                        <InputGroup compact>
+                            {startValueInput}
+                            <Select value={this.state.formDataUnits.entryModule} defaultValue={item.units.default} onChange={onUnitChange}>
+                                {Object.keys(units[item.units.quantity]).map((unit, index) => (
+                                    <Option value={unit} key={index}>{unit}</Option>
+                                ))}
+                            </Select>
+                        </InputGroup>
+                    ) : (
+                        <>
+                            {startValueInput}
+                        </>
+                    )}
                 </FormItem>
                 <FormItem style={{ margin: 6 }} label={"End " + label} labelCol={{ span: textLabelForInputSpan }} wrapperCol={{ span: inputFieldSpan }}>
-                    <Tooltip title={"Insert end value"}>
-                        {getFieldDecorator(endName, {
-                            rules: [{
-                                required: true, message: "Field required!"
-                            }, {
-                                validator: this.validateEntryModule
-                            }],
-                            initialValue: endHolder
-                        })(
-                            <Input style={{ width: inputFieldWidth, textAlign: 'center' }}
-                                   parametername={endName}
-                                   placeholder={endHolder}
-                                   onChange={this.handleEntryInputChange} />
-                        )}
-                    </Tooltip>
+                    {item.units ? (
+                        <InputGroup compact>
+                            {endValueInput}
+                            <Text style={{marginLeft: '0.7rem', marginTop: '0.3rem', color: '#AAAAAA'}}>
+                                {this.state.formDataUnits.entryModule}
+                            </Text>
+                        </InputGroup>
+                    ) : (
+                        {endValueInput}
+                    )}
                 </FormItem>
                 <FormItem style={{ margin: 6 }} label={'Generate'} labelCol={{ span: textLabelForInputSpan }} wrapperCol={{ span: inputFieldSpan }}>
                     <InputGroup compact>
@@ -183,51 +223,62 @@ class FormGenerator extends React.Component {
 
         if (!this.state.formItemsCounters.has(item.parameterName)) {
             this.state.formData[item.parameterName] = item.defaultValue ? item.defaultValue : 0.5;
+            this.state.formDataUnits[item.parameterName] = item.units?.default;
             this.state.formItemsCounters.add(item.parameterName);
         }
 
+        const input = (
+            <Tooltip title={typeof item.description !== 'undefined' ? item.description : "Insert value"}>
+                {getFieldDecorator(inputIdPrefix + item.parameterName, {
+                    rules: [{
+                        required: true, message: "Please, insert a value!"
+                    }, {
+                        validator: this.validate
+                    }],
+                    initialValue: typeof item.defaultValue !== undefined ? item.defaultValue : 0.5
+                })(<>
+                        <Input style={{width: inputFieldWidth, textAlign: 'center'}}
+                               parametername={item.parameterName}
+                               placeholder={item.placeholder}
+                               onChange={this.handleEntryInputChange}/>
+                    </>
+                )}
+            </Tooltip>
+        );
+
+        // const onUnitChange = (newUnit) => {
+        //     const parameterName = item.parameterName;
+        //     const { formData, formDataUnits } = this.state;
+        //     const oldUnit = formDataUnits[parameterName];
+        //     const particle = formData.particle_no;
+        //     const conversionRate = convertBetweenUnits(
+        //         item.units.quantity,
+        //         { unit: oldUnit, particle },
+        //         { unit: newUnit, particle },
+        //     );
+        //     formDataUnits[parameterName] = newUnit;
+        //     // this.setState({ formData, formDataUnits })
+        //     this.props.form.setFieldsValue({ 'input-id-slab_thickness_mm': formData[parameterName] * conversionRate });
+        // }
+
+        // onChange={onUnitChange}>
         return (
             <div>
-                {item.units ?
-                    (<InputGroup compact>
-                        <Tooltip title={typeof item.description !== 'undefined' ? item.description : "Insert value"}>
-                            {getFieldDecorator(inputIdPrefix + item.parameterName, {
-                                rules: [{
-                                    required: true, message: "Please, insert a value!"
-                                }, {
-                                    validator: this.validate
-                                }],
-                                initialValue: typeof item.defaultValue !== undefined ? item.defaultValue : 0.5
-                            })(<>
-                                    <Input style={{width: inputFieldWidth, textAlign: 'center'}}
-                                           parametername={item.parameterName}
-                                           placeholder={item.placeholder}
-                                           onChange={this.handleEntryInputChange}/>
-                                </>
-                            )}
-                        </Tooltip>
-                        <Select defaultValue={item.units.default}>
-                            {Object.keys(units[item.units.quantity]).map((xd, index) => (
-                                <Option value={xd} key={index}>{xd}</Option>
+                {item.units ? (
+                    <InputGroup compact>
+                        {input}
+                        <Select value={this.state.formDataUnits[item.parameterName]} defaultValue={item.units.default}>
+                            {Object.keys(units[item.units.quantity]).map((unit, index) => (
+                                <Option value={unit} key={index}>{unit}</Option>
                             ))}
                         </Select>
-                    </InputGroup> ) :
-                    ( <Tooltip title={typeof item.description !== 'undefined' ? item.description : "Insert value"}>
-                    {getFieldDecorator(inputIdPrefix + item.parameterName, {
-                        rules: [{
-                            required: true, message: "Please, insert a value!"
-                        }, {
-                            validator: this.validate
-                        }],
-                        initialValue: typeof item.defaultValue !== undefined ? item.defaultValue : 0.5
-                    })(<>
-                            <Input style={{width: inputFieldWidth, textAlign: 'center'}}
-                                   parametername={item.parameterName}
-                                   placeholder={item.placeholder}
-                                   onChange={this.handleEntryInputChange}/>
+                    </InputGroup>
+                    ) : (
+                        <>
+                            {input}
                         </>
-                    )}
-                </Tooltip>)}
+                    )
+                }
             </div>
         );
     };
@@ -278,6 +329,7 @@ class FormGenerator extends React.Component {
     };
 
     handleEntryInputChange = (event) => {
+        console.log(this.state);
         let newFormData = this.state.formData;
         newFormData[event.target.getAttribute('parametername')] = parseFloat(event.target.value);
         this.setState({
@@ -349,6 +401,7 @@ class FormGenerator extends React.Component {
     };
 
     validate = (rule, value, callback) => {
+        console.log("XD", value);
         let validationRules;
         const formItems = this.props.formItems;
         for (let i = 0; i < formItems.length; i++) {
